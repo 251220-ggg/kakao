@@ -3,121 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>주변 맛집 약탈 지도</title>
-    <link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Cormorant+Garamond:wght@700&display=swap" rel="stylesheet">
+    <title>카카오맵 주변 장소 검색 서비스</title>
     <style>
-        /* 기본 레이아웃 및 해적 지도 스타일 */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body, html { width: 100%; height: 100%; overflow: hidden; font-family: 'Cormorant Garamond', serif; }
-
-        /* 화면 전체 배경 (낡은 종이 질감) */
-        body { background-image: url('https://www.transparenttextures.com/patterns/old-paper.png'); background-color: #f3e5ab; }
-        .container { display: flex; width: 100%; height: 100vh; }
-
-        /* 왼쪽 사이드바 (해적 가죽 북/낡은 나무 느낌) */
-        .sidebar {
-            width: 380px;
+        /* [CSS] 1. 기본 스타일 리셋 및 전체 화면 설정 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body, html {
+            width: 100%;
             height: 100%;
-            background-color: #3e2723; 
-            background-image: url('https://www.transparenttextures.com/patterns/leather.png'); 
-            border-right: 3px solid #8d6e63; 
+            font-family: 'Malgun Gothic', dotum, sans-serif;
+            overflow: hidden;
+        }
+
+        /* [CSS] 2. 화면을 왼쪽(사이드바)과 오른쪽(지도)으로 2분할하는 컨테이너 */
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+        }
+
+        /* [CSS] 3. 왼쪽 사이드바 스타일 (검색창 + 결과 리스트) */
+        .sidebar {
+            width: 350px;
+            height: 100%;
+            background-color: #f8f9fa;
+            border-right: 1px solid #dee2e6;
             display: flex;
             flex-direction: column;
             z-index: 10;
-            box-shadow: 5px 0 15px rgba(0,0,0,0.3);
-            color: #d7ccc8; 
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
         }
 
-        .header { padding: 25px 20px; border-bottom: 1px solid #5d4037; }
-        .header h2 { margin-bottom: 15px; font-size: 1.8rem; font-family: 'Pirata One', cursive; color: #fee500; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); text-align: center; }
-
-        .search-box { display: flex; }
+        /* 검색창 영역 */
+        .search-area {
+            padding: 20px;
+            background-color: #ffffff;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .search-area h2 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: #333333;
+        }
+        .search-box {
+            display: flex;
+        }
         .search-box input {
             flex: 1;
-            padding: 12px;
-            border: 2px solid #8d6e63;
-            border-radius: 8px 0 0 8px;
+            padding: 10px;
+            border: 1px solid #cccccc;
+            border-radius: 4px 0 0 4px;
             outline: none;
-            font-size: 1rem;
-            background-color: #d7ccc8;
-            color: #3e2723;
-            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.95rem;
         }
-        .search-box input::placeholder { color: #795548; }
         .search-box button {
-            padding: 0 20px;
-            background-color: #d7ccc8;
-            border: none;
+            padding: 0 15px;
+            background-color: #fee500; /* 카카오 시그니처 옐로우 */
+            border: 1px solid #fee500;
+            border-radius: 0 4px 4px 0;
             cursor: pointer;
             font-weight: bold;
-            border-radius: 0 8px 8px 0;
-            color: #3e2723;
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1rem;
-            transition: background 0.2s;
+            color: #3c1e1e;
+            font-size: 0.95rem;
         }
-        .search-box button:hover { background-color: #fee500; }
+        .search-box button:hover {
+            background-color: #fad200;
+        }
 
-        /* 검색 결과 리스트 스타일 */
-        #result-list {
+        /* 검색 결과 리스트 영역 (스크롤 가능) */
+        .result-list {
             flex: 1;
             overflow-y: auto;
             list-style: none;
-            background-color: transparent;
             padding: 10px;
         }
         .result-item {
-            padding: 20px;
-            border-bottom: 1px solid #5d4037;
-            background-color: #d7ccc8; 
-            background-image: url('https://www.transparenttextures.com/patterns/old-paper.png'); 
-            cursor: pointer;
+            padding: 15px;
+            background-color: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
             margin-bottom: 10px;
-            border-radius: 8px;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
-            transition: all 0.2s;
-            color: #3e2723; 
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1rem;
-            border: 2px solid #8d6e63;
+            cursor: pointer;
+            transition: background-color 0.2s;
         }
-        .result-item:hover { background-color: #fffcf0; transform: translateY(-2px); box-shadow: 4px 4px 10px rgba(0,0,0,0.2); }
-        .result-item strong { display: block; font-size: 1.2rem; color: #c0392b; margin-bottom: 8px; font-family: 'Pirata One', cursive; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
-        .result-item p { font-size: 0.95rem; line-height: 1.4; margin-bottom: 5px; }
-        .result-item .info-link { font-size: 0.9rem; color: #b8860b; text-decoration: none; font-weight: bold; font-family: 'Pirata One', cursive; }
+        .result-item:hover {
+            background-color: #e9ecef;
+        }
+        .result-item strong {
+            display: block;
+            font-size: 1.05rem;
+            color: #212529;
+            margin-bottom: 5px;
+        }
+        .result-item p {
+            font-size: 0.85rem;
+            color: #6c757d;
+            line-height: 1.4;
+        }
 
-        /* 오른쪽 지도 영역 */
-        .map-area { flex: 1; position: relative; }
-        #map { width: 100%; height: 100%; }
+        /* [CSS] 4. 오른쪽 지도 영역 스타일 */
+        .map-area {
+            flex: 1;
+            height: 100%;
+        }
+        #map {
+            width: 100%;
+            height: 100%;
+        }
 
-        /* 커스텀 오버레이 스타일 (디자인 깨짐 방지 말꼬리 포함) */
-        .custom-overlay { 
+        /* [CSS] 5. 지도 위에 뜨는 말풍선(커스텀 오버레이) 스타일 */
+        .custom-overlay {
             position: relative;
-            bottom: 50px; 
-            padding: 12px; 
-            min-width: 160px; 
-            line-height: 1.5; 
-            background-color: #f3e5ab; 
-            background-image: url('https://www.transparenttextures.com/patterns/old-paper.png'); 
-            border: 2px solid #3e2723; 
-            border-radius: 8px; 
-            box-shadow: 4px 4px 10px rgba(0,0,0,0.3); 
-            font-family: 'Cormorant Garamond', serif; 
-            color: #3e2723; 
+            bottom: 45px;
+            background-color: #ffffff;
+            border: 1px solid #333333;
+            border-radius: 4px;
+            padding: 10px;
+            font-size: 0.85rem;
+            box-shadow: 0px 2px 6px rgba(0,0,0,0.2);
+            text-align: center;
+            min-width: 150px;
         }
-        .custom-overlay strong { color: #c0392b; font-family: 'Pirata One', cursive; font-size: 1.1rem; }
-        .custom-overlay small { color: #5d4037; font-size: 0.9rem; }
+        /* 말풍선 꼬리 부분 */
         .custom-overlay::after {
             content: '';
             position: absolute;
-            bottom: -8px;
+            bottom: -6px;
             left: 50%;
             transform: translateX(-50%);
-            border-width: 8px 8px 0;
+            border-width: 6px 6px 0;
             border-style: solid;
-            border-color: #3e2723 transparent;
+            border-color: #ffffff transparent;
             display: block;
             width: 0;
+        }
+        /* 말풍선 테두리용 꼬리 배경 */
+        .custom-overlay::before {
+            content: '';
+            position: absolute;
+            bottom: -7px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 7px 7px 0;
+            border-style: solid;
+            border-color: #333333 transparent;
+            display: block;
+            width: 0;
+            z-index: -1;
         }
     </style>
 </head>
@@ -125,14 +160,14 @@
 
 <div class="container">
     <div class="sidebar">
-        <div class="header">
-            <h2>☠ 주변 맛집 약탈 지도</h2>
+        <div class="search-area">
+            <h2>어디를 찾으시나요?</h2>
             <div class="search-box">
-                <input type="text" id="keyword" placeholder="예: 고기, 일식, 선술집" onkeypress="if(event.keyCode==13) searchPlaces()">
-                <button onclick="searchPlaces()">정찰</button>
+                <input type="text" id="keyword" placeholder="예: 맛집, 카페, 편의점" onkeypress="if(event.keyCode==13) searchPlaces()">
+                <button onclick="searchPlaces()">검색</button>
             </div>
         </div>
-        <ul id="result-list"></ul>
+        <ul id="result-list" class="result-list"></ul>
     </div>
 
     <div class="map-area">
@@ -143,166 +178,88 @@
 <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=d5dd97a46923dda3a649e5e521134f5f&libraries=services"></script>
 
 <script>
-    // 1. 지도 초기화
-    const mapContainer = document.getElementById('map'); 
-    const mapOptions = {
-        center: new kakao.maps.LatLng(37.66, 126.83), 
-        level: 5 
-    };
+    // [JS] 2. 전역 변수 선언 (여러 함수에서 공통으로 사용하기 위함)
+    let map;                  // 지도 객체
+    let placeService;         // 장소 검색 서비스 객체
+    let customOverlay;        // 지도 위에 띄울 말풍선 객체
+    let markers = [];         // 지도에 표시된 마커들을 담을 배열
 
-    const map = new kakao.maps.Map(mapContainer, mapOptions); 
-    const placeService = new kakao.maps.services.Places(); 
-    
-    // 커스텀 오버레이로 말풍선 구현
-    const customOverlay = new kakao.maps.CustomOverlay({ xAnchor: 0.5, yAnchor: 1, zIndex: 3 }); 
-    let markers = []; 
+    // 기본 중심 좌표 (위치 권한 거부 시 사용할 서울시청 좌표)
+    const defaultPosition = new kakao.maps.LatLng(37.566826, 126.9786567);
 
-    // 2. 맛집 정찰(검색) 실행 함수
+    // [JS] 3. 지도가 안전하게 로드된 후 실행되도록 kakao.maps.load 사용
+    kakao.maps.load(function() {
+        initMap();
+    });
+
+    // [JS] 4. 지도 초기화 및 위치 권한 획득 함수
+    function initMap() {
+        const mapContainer = document.getElementById('map'); 
+        const mapOptions = {
+            center: defaultPosition, // 우선 기본 좌표로 세팅
+            level: 5                 // 지도의 확대 레벨 (지시조건: 5)
+        };
+
+        // 지도 생성
+        map = new kakao.maps.Map(mapContainer, mapOptions); 
+        
+        // 장소 검색 객체 생성
+        placeService = new kakao.maps.services.Places(); 
+        
+        // 커스텀 오버레이(말풍선) 객체 생성 (x, y축 기준점을 마커 상단 중앙에 맞춤)
+        customOverlay = new kakao.maps.CustomOverlay({ xAnchor: 0.5, yAnchor: 1, zIndex: 3 });
+
+        // 브라우저가 GPS/위치정보를 지원하는지 확인
+        if (navigator.geolocation) {
+            // 현재 위치 요청
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const lat = position.coords.latitude;  // 위도
+                const lon = position.coords.longitude; // 경도
+                const currentPosition = new kakao.maps.LatLng(lat, lon);
+                
+                // 지도의 중심을 현재 위치로 이동
+                map.setCenter(currentPosition);
+                
+                // 현재 내 위치에 간단히 마커 표시
+                const currentMarker = new kakao.maps.Marker({
+                    position: currentPosition,
+                    map: map
+                });
+                markers.push(currentMarker);
+                
+            }, function(error) {
+                console.log("위치 권한을 획득하지 못했습니다. 기본 위치로 표시합니다.", error);
+            });
+        } else {
+            console.log("이 브라우저는 Geolocation을 지원하지 않습니다.");
+        }
+    }
+
+    // [JS] 5. 키워드 장소 검색 실행 함수
     function searchPlaces() {
         const keywordInput = document.getElementById('keyword').value;
 
+        // 빈 칸 검색 방지
         if (!keywordInput.trim()) {
-            alert('어떤 맛집을 털지 목적지를 입력하라, 선장!');
+            alert('검색어를 입력해 주세요!');
             return;
         }
 
+        // 현재 지도 중심 기준, 반경 5km 이내 검색 설정
         const searchOptions = {
             location: map.getCenter(), 
             radius: 5000,              
             sort: kakao.maps.services.SortBy.DISTANCE 
         };
 
+        // 카카오 API로 키워드 검색 요청 (결과는 콜백 함수로 전달됨)
         placeService.keywordSearch(keywordInput, placesSearchCallback, searchOptions);
     }
 
-    // 3. 검색 완료 콜백 함수
+    // [JS] 6. 검색 완료 후 데이터를 처리하는 콜백 함수
     function placesSearchCallback(data, status) {
         if (status === kakao.maps.services.Status.OK) {
-            displayResults(data); 
-        } else if (status ===        .search-box input {
-            flex: 1;
-            padding: 12px;
-            border: 2px solid #8d6e63;
-            border-radius: 8px 0 0 8px;
-            outline: none;
-            font-size: 1rem;
-            background-color: #d7ccc8;
-            color: #3e2723;
-            font-family: 'Cormorant Garamond', serif;
-        }
-        .search-box button {
-            padding: 0 20px;
-            background-color: #d7ccc8;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-            border-radius: 0 8px 8px 0;
-            color: #3e2723;
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1rem;
-            transition: background 0.2s;
-        }
-        .search-box button:hover { background-color: #fee500; }
-
-        /* 검색 결과 리스트 스타일 (찢어진 종이 조각 효과) */
-        #result-list {
-            flex: 1;
-            overflow-y: auto;
-            list-style: none;
-            background-color: transparent;
-            padding: 10px;
-        }
-        .result-item {
-            padding: 20px;
-            border-bottom: 1px solid #5d4037;
-            background-color: #d7ccc8; /* 낡은 종이색 */
-            background-image: url('https://www.transparenttextures.com/patterns/old-paper.png'); /* 낡은 종이 질감 */
-            cursor: pointer;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
-            transition: all 0.2s;
-            color: #3e2723; /* 어두운 갈색 글씨 */
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1rem;
-            border-image: url('https://www.transparenttextures.com/patterns/dark-wood.png') 30 stretch;
-            border-style: solid;
-            border-width: 2px;
-        }
-        .result-item:hover { background-color: #fffcf0; transform: translateY(-2px); box-shadow: 4px 4px 10px rgba(0,0,0,0.2); }
-        .result-item strong { display: block; font-size: 1.2rem; color: #c0392b; margin-bottom: 8px; font-family: 'Pirata One', cursive; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
-        .result-item p { font-size: 0.95rem; line-height: 1.4; margin-bottom: 5px; }
-        .result-item .info-link { font-size: 0.9rem; color: #fee500; text-decoration: none; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); font-family: 'Pirata One', cursive; }
-
-        /* 3. 오른쪽 지도 영역 디자인 (오버레이 활용) */
-        .map-area { flex: 1; position: relative; }
-        #map { width: 100%; height: 100%; }
-
-        /* 인포윈도우 커스텀 스타일 (낡은 종이 팝업) */
-        .custom-info { padding: 10px; min-width: 150px; line-height: 1.5; background-color: #f3e5ab; background-image: url('https://www.transparenttextures.com/patterns/old-paper.png'); border: 2px solid #3e2723; border-radius: 8px; box-shadow: 4px 4px 10px rgba(0,0,0,0.3); font-family: 'Cormorant Garamond', serif; color: #3e2723; }
-        .custom-info strong { color: #c0392b; font-family: 'Pirata One', cursive; font-size: 1.1rem; }
-        .custom-info small { color: #5d4037; font-size: 0.9rem; }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <div class="sidebar">
-        <div class="header">
-            <h2>☠ 보물 탐색 지도</h2>
-            <div class="search-box">
-                <input type="text" id="keyword" placeholder="예: 맛집, 카페, 편의점" onkeypress="if(event.keyCode==13) searchPlaces()">
-                <button onclick="searchPlaces()">검색</button>
-            </div>
-        </div>
-        <ul id="result-list">
-            </ul>
-    </div>
-
-    <div class="map-area">
-        <div id="map"></div>
-    </div>
-</div>
-
-<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=d5dd97a46923dda3a649e5e521134f5f&libraries=services"></script>
-
-<script>
-    // 1. 지도 초기화
-    const mapContainer = document.getElementById('map'); 
-    const mapOptions = {
-        center: new kakao.maps.LatLng(37.66, 126.83), // 초기 중심 좌표 (학교)
-        level: 5 // 초기 확대 레벨
-    };
-
-    const map = new kakao.maps.Map(mapContainer, mapOptions); // 지도 객체 생성
-    const placeService = new kakao.maps.services.Places(); // 장소 검색 서비스 객체
-    const infoWindow = new kakao.maps.InfoWindow({ zIndex: 1 }); // 정보창 객체
-    let markers = []; // 생성된 마커들을 저장할 배열
-
-    // 2. 장소 검색 실행 함수
-    function searchPlaces() {
-        const keywordInput = document.getElementById('keyword').value;
-
-        if (!keywordInput.trim()) {
-            alert('검색어를 입력해 주세요!');
-            return;
-        }
-
-        // 현재 지도 중심 좌표를 기준으로 주변 장소 검색 (location 옵션 사용)
-        const searchOptions = {
-            location: map.getCenter(), // 현재 지도의 중심 좌표
-            radius: 5000,              // 중심으로부터 5km 반경 이내 검색
-            sort: kakao.maps.services.SortBy.DISTANCE // 거리순 정렬
-        };
-
-        // 카카오 서버에 장소 검색 요청
-        placeService.keywordSearch(keywordInput, placesSearchCallback, searchOptions);
-    }
-
-    // 3. 검색 완료 시 결과를 처리하는 콜백 함수
-    function placesSearchCallback(data, status) {
-        if (status === kakao.maps.services.Status.OK) {
-            displayResults(data); // 결과가 있으면 화면에 표시
+            displayResults(data); // 검색 성공 시 리스트와 마커 표시
         } else if (status === kakao.maps.services.Status.ZERO_RESULT) {
             alert('주변에 검색 결과가 없습니다.');
         } else {
@@ -310,86 +267,77 @@
         }
     }
 
-    // 4. 검색 결과 목록과 마커를 화면에 표시하는 함수
+    // [JS] 7. 검색 결과를 리스트와 지도 마커로 동적 렌더링하는 함수
     function displayResults(places) {
         const listElement = document.getElementById('result-list');
-        const bounds = new kakao.maps.LatLngBounds(); // 지도 범위를 재설정하기 위한 객체
+        const bounds = new kakao.maps.LatLngBounds(); // 마커들을 모두 포함하도록 지도를 움직이기 위한 범위 객체
 
-        removeMarkers(); // 이전 검색 마커들 지우기
-        listElement.innerHTML = ''; // 이전 리스트 내용 지우기
+        // 기존 마커와 띄워져 있던 말풍선 초기화
+        clearMarkers();
+        customOverlay.setMap(null); 
+        listElement.innerHTML = ''; 
 
+        // 검색된 장소 배열을 반복문으로 처리
         places.forEach((place) => {
             const placePosition = new kakao.maps.LatLng(place.y, place.x);
-            const marker = addMarker(placePosition); // 마커 생성 및 지도 표시
+            const marker = addMarker(placePosition); // 지도에 마커 추가
             
-            // 영업시간은 API에서 제공하지 않으므로 상세페이지 링크로 대체
             const address = place.road_address_name || place.address_name;
-            const detailUrl = place.place_url; // 장소 상세 정보(영업시간 등 포함) 페이지 주소
 
-            // 왼쪽 리스트에 추가할 아이템(HTML) 생성 (해적 컨셉에 맞게 수정)
+            // HTML 문성 내부에 동적으로 생성할 <li> 태그 생성 및 채우기
             const itemElement = document.createElement('li');
             itemElement.className = 'result-item';
             itemElement.innerHTML = `
-                <img src="https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/treasure_box.png" style="width:20px; float:right; margin-top:5px;">
                 <strong>${place.place_name}</strong>
                 <p>📍 ${address}</p>
                 <p>📞 ${place.phone || '번호 없음'}</p>
-                <a href="${detailUrl}" target="_blank" class="info-link">보물 지도로 이동 ☠</a>
             `;
 
-            // 리스트 아이템 클릭 시 지도 이동 및 정보창 표시
+            // 리스트 아이템 클릭 시 처리
             itemElement.onclick = () => {
-                map.panTo(placePosition);
-                showInfoWindow(marker, place.place_name, address, detailUrl);
+                map.panTo(placePosition); // 해당 위치로 지도 부드럽게 이동
+                showOverlay(marker, place.place_name); // 말풍선 표시
             };
 
-            // 마커 클릭 시 정보창 표시
+            // 지도 위 마커 클릭 시 처리
             kakao.maps.event.addListener(marker, 'click', () => {
-                showInfoWindow(marker, place.place_name, address, detailUrl);
+                showOverlay(marker, place.place_name);
             });
 
-            listElement.appendChild(itemElement);
-            bounds.extend(placePosition); // 전체 결과를 포함하도록 범위 확장
+            listElement.appendChild(itemElement); // 사이드바에 추가
+            bounds.extend(placePosition); // 범위 객체에 현재 장소 좌표 누적
         });
 
-        // 검색된 장소들이 모두 보이도록 지도 중심/레벨 조정
+        // 검색된 장소들이 모두 보이도록 지도 화면 범위 재조정
         map.setBounds(bounds);
     }
 
-    // 마커를 생성하고 배열에 관리하는 함수 (커스텀 마커 이미지 적용)
+    // [JS] 8. 마커를 생성하고 배열에 관리하는 함수
     function addMarker(position) {
-        // 커스텀 마커 이미지 설정 (보물상자 이미지 활용)
-        const imageSrc = 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/treasure_box.png'; // 카카오맵 샘플 이미지 활용
-        const imageSize = new kakao.maps.Size(34, 34); // 마커 이미지 크기
-        const markerImage = new kakao.maps.MarkerImage(imageSrc, imageSize);
-
         const marker = new kakao.maps.Marker({
             position: position,
-            image: markerImage, // 커스텀 이미지 적용
             map: map
         });
-        markers.push(marker);
+        markers.push(marker); // 추후 삭제를 위해 배열에 보관
         return marker;
     }
 
-    // 기존 마커를 지도에서 제거하는 함수
-    function removeMarkers() {
-        markers.forEach(m => m.setMap(null));
+    // [JS] 9. 기존 마커들을 지도에서 지우는 함수
+    function clearMarkers() {
+        markers.forEach(marker => marker.setMap(null));
         markers = [];
     }
 
-    // 지도 위 팝업(정보창)을 띄우는 함수 (해적 컨셉에 맞게 HTML 수정)
-    function showInfoWindow(marker, name, address, url) {
+    // [JS] 10. 마커 위에 깔끔한 디자인의 말풍선(커스텀 오버레이)을 띄우는 함수
+    function showOverlay(marker, name) {
         const content = `
-            <div class="custom-info pirate-info">
-                <img src="https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/treasure_box.png" style="width:20px; vertical-align:middle; margin-right:5px;">
-                <strong>${name}</strong><br>
-                <small style="color:#2c1a0a;">📍 ${address}</small><br>
-                <a href="${url}" target="_blank" style="font-size:11px; color:#c0392b; font-weight:bold;">보물 지도로 이동 ☠</a>
+            <div class="custom-overlay">
+                <strong>${name}</strong>
             </div>
         `;
-        infoWindow.setContent(content);
-        infoWindow.open(map, marker);
+        customOverlay.setContent(content);
+        customOverlay.setPosition(marker.getPosition());
+        customOverlay.setMap(map); // 지도에 표시
     }
 </script>
 
