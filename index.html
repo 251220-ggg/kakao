@@ -3,31 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>나의 카카오맵 주변 탐색 서비스 (해적 지도 버전)</title>
+    <title>주변 맛집 약탈 지도</title>
     <link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Cormorant+Garamond:wght@700&display=swap" rel="stylesheet">
     <style>
-        /* 1. 기본 레이아웃 및 해적 지도 스타일 */
+        /* 기본 레이아웃 및 해적 지도 스타일 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body, html { width: 100%; height: 100%; overflow: hidden; font-family: 'Cormorant Garamond', serif; }
 
         /* 화면 전체 배경 (낡은 종이 질감) */
         body { background-image: url('https://www.transparenttextures.com/patterns/old-paper.png'); background-color: #f3e5ab; }
-
-        /* 화면을 왼쪽(사이드바)과 오른쪽(지도)으로 2분할 */
         .container { display: flex; width: 100%; height: 100vh; }
 
-        /* 2. 왼쪽 사이드바 디자인 (해적 가죽 북/낡은 나무 느낌) */
+        /* 왼쪽 사이드바 (해적 가죽 북/낡은 나무 느낌) */
         .sidebar {
             width: 380px;
             height: 100%;
-            background-color: #3e2723; /* 어두운 가죽색 */
-            background-image: url('https://www.transparenttextures.com/patterns/leather.png'); /* 가죽 질감 */
-            border-right: 3px solid #8d6e63; /* 거친 테두리 */
+            background-color: #3e2723; 
+            background-image: url('https://www.transparenttextures.com/patterns/leather.png'); 
+            border-right: 3px solid #8d6e63; 
             display: flex;
             flex-direction: column;
             z-index: 10;
             box-shadow: 5px 0 15px rgba(0,0,0,0.3);
-            color: #d7ccc8; /* 밝은 베이지색 글씨 */
+            color: #d7ccc8; 
         }
 
         .header { padding: 25px 20px; border-bottom: 1px solid #5d4037; }
@@ -35,6 +33,153 @@
 
         .search-box { display: flex; }
         .search-box input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #8d6e63;
+            border-radius: 8px 0 0 8px;
+            outline: none;
+            font-size: 1rem;
+            background-color: #d7ccc8;
+            color: #3e2723;
+            font-family: 'Cormorant Garamond', serif;
+        }
+        .search-box input::placeholder { color: #795548; }
+        .search-box button {
+            padding: 0 20px;
+            background-color: #d7ccc8;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 0 8px 8px 0;
+            color: #3e2723;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+        .search-box button:hover { background-color: #fee500; }
+
+        /* 검색 결과 리스트 스타일 */
+        #result-list {
+            flex: 1;
+            overflow-y: auto;
+            list-style: none;
+            background-color: transparent;
+            padding: 10px;
+        }
+        .result-item {
+            padding: 20px;
+            border-bottom: 1px solid #5d4037;
+            background-color: #d7ccc8; 
+            background-image: url('https://www.transparenttextures.com/patterns/old-paper.png'); 
+            cursor: pointer;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+            color: #3e2723; 
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            border: 2px solid #8d6e63;
+        }
+        .result-item:hover { background-color: #fffcf0; transform: translateY(-2px); box-shadow: 4px 4px 10px rgba(0,0,0,0.2); }
+        .result-item strong { display: block; font-size: 1.2rem; color: #c0392b; margin-bottom: 8px; font-family: 'Pirata One', cursive; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+        .result-item p { font-size: 0.95rem; line-height: 1.4; margin-bottom: 5px; }
+        .result-item .info-link { font-size: 0.9rem; color: #b8860b; text-decoration: none; font-weight: bold; font-family: 'Pirata One', cursive; }
+
+        /* 오른쪽 지도 영역 */
+        .map-area { flex: 1; position: relative; }
+        #map { width: 100%; height: 100%; }
+
+        /* 커스텀 오버레이 스타일 (디자인 깨짐 방지 말꼬리 포함) */
+        .custom-overlay { 
+            position: relative;
+            bottom: 50px; 
+            padding: 12px; 
+            min-width: 160px; 
+            line-height: 1.5; 
+            background-color: #f3e5ab; 
+            background-image: url('https://www.transparenttextures.com/patterns/old-paper.png'); 
+            border: 2px solid #3e2723; 
+            border-radius: 8px; 
+            box-shadow: 4px 4px 10px rgba(0,0,0,0.3); 
+            font-family: 'Cormorant Garamond', serif; 
+            color: #3e2723; 
+        }
+        .custom-overlay strong { color: #c0392b; font-family: 'Pirata One', cursive; font-size: 1.1rem; }
+        .custom-overlay small { color: #5d4037; font-size: 0.9rem; }
+        .custom-overlay::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 8px 8px 0;
+            border-style: solid;
+            border-color: #3e2723 transparent;
+            display: block;
+            width: 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="sidebar">
+        <div class="header">
+            <h2>☠ 주변 맛집 약탈 지도</h2>
+            <div class="search-box">
+                <input type="text" id="keyword" placeholder="예: 고기, 일식, 선술집" onkeypress="if(event.keyCode==13) searchPlaces()">
+                <button onclick="searchPlaces()">정찰</button>
+            </div>
+        </div>
+        <ul id="result-list"></ul>
+    </div>
+
+    <div class="map-area">
+        <div id="map"></div>
+    </div>
+</div>
+
+<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=d5dd97a46923dda3a649e5e521134f5f&libraries=services"></script>
+
+<script>
+    // 1. 지도 초기화
+    const mapContainer = document.getElementById('map'); 
+    const mapOptions = {
+        center: new kakao.maps.LatLng(37.66, 126.83), 
+        level: 5 
+    };
+
+    const map = new kakao.maps.Map(mapContainer, mapOptions); 
+    const placeService = new kakao.maps.services.Places(); 
+    
+    // 커스텀 오버레이로 말풍선 구현
+    const customOverlay = new kakao.maps.CustomOverlay({ xAnchor: 0.5, yAnchor: 1, zIndex: 3 }); 
+    let markers = []; 
+
+    // 2. 맛집 정찰(검색) 실행 함수
+    function searchPlaces() {
+        const keywordInput = document.getElementById('keyword').value;
+
+        if (!keywordInput.trim()) {
+            alert('어떤 맛집을 털지 목적지를 입력하라, 선장!');
+            return;
+        }
+
+        const searchOptions = {
+            location: map.getCenter(), 
+            radius: 5000,              
+            sort: kakao.maps.services.SortBy.DISTANCE 
+        };
+
+        placeService.keywordSearch(keywordInput, placesSearchCallback, searchOptions);
+    }
+
+    // 3. 검색 완료 콜백 함수
+    function placesSearchCallback(data, status) {
+        if (status === kakao.maps.services.Status.OK) {
+            displayResults(data); 
+        } else if (status ===        .search-box input {
             flex: 1;
             padding: 12px;
             border: 2px solid #8d6e63;
