@@ -203,4 +203,230 @@
 
     <div id="tactical-map"></div>
 
-    <script type="text/javascript" src="//
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=d5dd97a46923dda3a649e5e521134f5f&libraries=services&autoload=false"></script>
+    
+    <script>
+        // 전역 변수 선언 (조직의 자산)
+        let mapObject; 
+        let placesService;
+        let activeOverlay = null; // 열려있는 커스텀 팝업 관리용
+        let markersArray = [];
+        let currentMode = 'bank'; // 현재 활성화된 탭 상태 ('bank' or 'jewel')
+
+        // 🖼️ 마커 이미지 소스 (필요하면 진짜 갱스터 이미지 URL이나 로컬 경로로 바꿔라)
+        const MY_LOCATION_IMG = 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png';
+        const BANK_MARKER_IMG = 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png';
+        const JEWEL_MARKER_IMG = 'https://t1.daumcdn.net/mapjsapi/images/marker.png';
+
+        // 안전하게 카카오 맵이 완전히 로딩된 후 실행
+        kakao.maps.load(function() {
+            initMap();
+        });
+
+        // 지도 초기화 함수
+        function initMap() {
+            const mapContainer = document.getElementById('tactical-map');
+            
+            // 기본 중심 좌표 (서울역)
+            const defaultPosition = new kakao.maps.LatLng(37.554648, 126.972559);
+            
+            const mapOptions = {
+                center: defaultPosition,
+                level: 5 // 확대 레벨
+            };
+
+            mapObject = new kakao.maps.Map(mapContainer, mapOptions);
+            placesService = new kakao.maps.services.Places(mapObject); 
+
+            // 브라우저가 위치 권한을 지원하는지 확인
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const currentLat = position.coords.latitude; 
+                    const currentLng = position.coords.longitude; 
+                    
+                    const currentPosition = new kakao.maps.LatLng(currentLat, currentLng);
+                    mapObject.setCenter(currentPosition);
+                    
+                    // 📍 내 위치 특별 마커 표시
+                    displayCurrentLocationMarker(currentPosition);
+                    
+                    // 초기 자동 검색 (현재 선택된 탭 기준)
+                    searchTargetPlaces();
+                }, function(error) {
+                    alert("위치 권한을 거부당했다. 서울역 중심으로 작전을 개시한다.");
+                    searchTargetPlaces();
+                });
+            } else {
+                alert("이 브라우저는 GPS 추적이 안 된다. 서울역 중심으로 시작한다.");
+                searchTargetPlaces();
+            }
+        }
+
+        // 탭 전환 로직
+        function switchTab(mode) {
+            currentMode = mode;
+            
+            // UI 버튼 상태 변경
+            document.getElementById('tab-bank').classList.remove('active');
+            document.getElementById('tab-jewel').classList.remove('active');
+            document.getElementById('tab-' + mode).classList.add('active');
+
+            // 팝업이 열려있다면 닫기
+            closeOverlay();
+            
+            // 탭에 맞는 새로운 타겟 스캔
+            searchTargetPlaces();
+        }
+
+        // 📍 현재 내 위치에 특별 마커 표시
+        function displayCurrentLocationMarker(position) {
+            const imageSize = new kakao.maps.Size(40, 42); 
+            const markerImage = new kakao.maps.MarkerImage(MY_LOCATION_IMG, imageSize);
+
+            const marker = new kakao.maps.Marker({
+                map: mapObject,
+                position: position,
+                image: markerImage,
+                title: '작전 본부 (현위치)'
+            });
+        }
+
+        // 키워드 및 카테고리로 장소 검색 실행 함수
+        function searchTargetPlaces() {
+            // 탭 전환 시 기존 마커 싹 지우기
+            clearMarkers();
+            document.getElementById('places-list').innerHTML = '';
+
+            const center = mapObject.getCenter();
+            const searchOptions = {
+                location: center,
+                radius: 5000, // 중심 반경 5km 이내 검색
+                sort: kakao.maps.services.SortBy.DISTANCE // 가까운 순 정렬
+            };
+
+            // 🔍 카테고리/키워드 분기 처리
+            if (currentMode === 'bank') {
+                // 은행은 공식 카테고리 코드 BK9 사용
+                placesService.categorySearch('BK9', placesSearchCallback, searchOptions);
+            } else if (currentMode === 'jewel') {
+                // 금은방은 전용 코드가 없으므로 키워드로 검색
+                placesService.keywordSearch('금은방', placesSearchCallback, searchOptions);
+            }
+        }
+
+        // 장소검색 콜백 함수
+        function placesSearchCallback(data, status, pagination) {
+            if (status === kakao.maps.services.Status.OK) {
+                displayPlaces(data);
+            } else if (status === kakao.maps.services.Status.ZERO_RESULT) {
+                alert('이 구역엔 털 만한 곳이 없다. 이동해라.');
+            } else if (status === kakao.maps.services.Status.ERROR) {
+                alert('데이터 스니핑에 실패했다. 네트워크 상태 확인해라.');
+            }
+        }
+
+        // 검색 결과를 화면과 지도에 뿌려주는 함수
+        function displayPlaces(places) {
+            const listEl = document.getElementById('places-list');
+            const bounds = new kakao.maps.LatLngBounds();
+
+            for (let i = 0; i < places.length; i++) {
+                const placePosition = new kakao.maps.LatLng(places[i].y, places[i].x);
+                const marker = addMarker(placePosition, currentMode); // 카테고리별 마커 생성
+                const itemEl = getListItem(i, places[i]); 
+
+                bounds.extend(placePosition);
+
+                // 💬 마커 클릭 시 상세 팝업 오픈 (CustomOverlay)
+                kakao.maps.event.addListener(marker, 'click', function() {
+                    mapObject.panTo(placePosition);
+                    displayCustomOverlay(marker, places[i]);
+                });
+
+                // 리스트 아이템 클릭 시
+                itemEl.onclick = function() {
+                    mapObject.setLevel(3); // 줌인
+                    mapObject.panTo(placePosition);
+                    displayCustomOverlay(marker, places[i]);
+                };
+
+                listEl.appendChild(itemEl);
+            }
+            // 검색된 위치들이 전부 보이게 지도 범위 조정
+            mapObject.setBounds(bounds);
+        }
+
+        // 리스트 UI 엘리먼트 제작 함수
+        function getListItem(index, places) {
+            const el = document.createElement('li');
+            const address = places.road_address_name ? places.road_address_name : places.address_name;
+            el.innerHTML = `
+                <div class="place-name">${index + 1}. ${places.place_name}</div>
+                <div class="place-address">${address}</div>
+            `;
+            return el;
+        }
+
+        // 🎨 카테고리별 마커 추가 함수
+        function addMarker(position, mode) {
+            let imgSrc = mode === 'bank' ? BANK_MARKER_IMG : JEWEL_MARKER_IMG;
+            const imageSize = new kakao.maps.Size(30, 35);
+            const markerImage = new kakao.maps.MarkerImage(imgSrc, imageSize);
+
+            const marker = new kakao.maps.Marker({
+                position: position,
+                map: mapObject,
+                image: markerImage
+            });
+
+            markersArray.push(marker); 
+            return marker;
+        }
+
+        // 기존 마커 싹 지우기 (화면 청소)
+        function clearMarkers() {
+            for (let i = 0; i < markersArray.length; i++) {
+                markersArray[i].setMap(null);
+            }
+            markersArray = [];
+        }
+
+        // ✨ 커스텀 말풍선 생성 및 표시 함수 (로드뷰 연동 포함)
+        function displayCustomOverlay(marker, place) {
+            closeOverlay(); // 기존에 열린 팝업 닫기
+
+            const address = place.road_address_name ? place.road_address_name : place.address_name;
+            // 🚶 카카오맵 로드뷰 링크 생성 (위도, 경도 활용)
+            const roadviewUrl = `https://map.kakao.com/link/roadview/${place.y},${place.x}`;
+
+            // 팝업 HTML 구조
+            const content = `
+                <div class="gangster-popup">
+                    <div class="popup-header">
+                        <div class="popup-title">${place.place_name}</div>
+                        <div class="close-btn" onclick="closeOverlay()" title="닫기">✖</div>
+                    </div>
+                    <div class="popup-address">${address}</div>
+                    <a href="${roadviewUrl}" target="_blank" class="roadview-btn">🚶 주변 정찰 (로드뷰)</a>
+                </div>
+            `;
+
+            // 카카오맵 커스텀 오버레이 객체 생성
+            activeOverlay = new kakao.maps.CustomOverlay({
+                content: content,
+                map: mapObject,
+                position: marker.getPosition(),
+                zIndex: 3
+            });
+        }
+
+        // 팝업 닫기 전역 함수 (HTML onClick에서 호출됨)
+        window.closeOverlay = function() {
+            if (activeOverlay) {
+                activeOverlay.setMap(null);
+                activeOverlay = null;
+            }
+        };
+    </script>
+</body>
+</html>
