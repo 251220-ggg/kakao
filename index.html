@@ -3,142 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>GANGTER's ROBBING MAP</title>
-
-    <!-- 카카오맵 SDK -->
-    <script
-        type="text/javascript"
-        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=d5dd97a46923dda3a649e5e521134f5f&libraries=services&autoload=false">
-    </script>
-
+    <title>GANGSTER's ROBBING MAP</title>
     <style>
-
-        /* =========================
-           갱스터 다크 테마
-        ========================== */
-
+        /* 갱스터 스타일의 다크&골드 테마 설정 */
         :root {
-            --bg-color: #111111;
-            --panel-color: #1f1f1f;
-            --gold-color: #ffd700;
-            --red-color: #ff3b3b;
+            --bg-color: #1a1a1a;
+            --panel-bg: #2d2d2d;
+            --accent-color: #ffd700; /* 금괴 색상 */
             --text-color: #ffffff;
-            --border-color: #333333;
+            --border-color: #444444;
+            --danger-color: #ff3333;
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: "Malgun Gothic", sans-serif;
+            font-family: 'Malgun Gothic', sans-serif;
         }
 
         body {
             display: flex;
-            width: 100vw;
             height: 100vh;
-            background: var(--bg-color);
+            background-color: var(--bg-color);
             color: var(--text-color);
             overflow: hidden;
         }
 
-        /* =========================
-           왼쪽 패널
-        ========================== */
-
+        /* 왼쪽 작전 데스크 */
         #operation-desk {
-            width: 360px;
+            width: 350px;
             height: 100%;
-            background: var(--panel-color);
-            border-right: 3px solid var(--gold-color);
+            background-color: var(--panel-bg);
+            border-right: 3px solid var(--accent-color);
             display: flex;
             flex-direction: column;
             z-index: 10;
-            box-shadow: 5px 0 20px rgba(0,0,0,0.5);
+            box-shadow: 5px 0 15px rgba(0, 0, 0, 0.5);
         }
 
-        .header-box {
+        /* 탭 구역 */
+        .tab-box {
             padding: 20px;
             border-bottom: 1px solid var(--border-color);
+            text-align: center;
         }
 
-        .header-title {
-            color: var(--gold-color);
-            font-size: 1.4rem;
-            font-weight: bold;
+        .tab-box h2 {
+            font-size: 1.2rem;
             margin-bottom: 15px;
-            text-shadow: 0 0 10px rgba(255,215,0,0.5);
+            color: var(--accent-color);
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        /* =========================
-           탭 버튼
-        ========================== */
-
-        .tab-group {
+        .tab-buttons {
             display: flex;
             gap: 10px;
-            margin-bottom: 15px;
         }
 
-        .tab-button {
+        .tab-btn {
             flex: 1;
-            padding: 10px;
-            border: none;
-            cursor: pointer;
-            border-radius: 6px;
-            background: #2a2a2a;
-            color: white;
-            font-weight: bold;
-            transition: 0.2s;
-        }
-
-        .tab-button.active {
-            background: var(--gold-color);
-            color: black;
-        }
-
-        .tab-button:hover {
-            transform: scale(1.03);
-        }
-
-        /* =========================
-           검색창
-        ========================== */
-
-        .search-group {
-            display: flex;
-            gap: 5px;
-        }
-
-        #search-keyword {
-            flex: 1;
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid #555;
-            background: #111;
-            color: white;
-        }
-
-        #search-keyword:focus {
-            outline: none;
-            border-color: var(--gold-color);
-        }
-
-        #search-button {
-            padding: 10px 15px;
-            border: none;
-            background: var(--gold-color);
-            color: black;
-            border-radius: 6px;
+            padding: 12px;
+            background-color: #111;
+            color: #fff;
+            border: 1px solid var(--border-color);
             font-weight: bold;
             cursor: pointer;
+            border-radius: 4px;
+            transition: 0.3s;
         }
 
-        /* =========================
-           리스트
-        ========================== */
+        .tab-btn.active {
+            background-color: var(--accent-color);
+            color: #000;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
 
+        /* 결과 리스트 구역 */
         #places-list {
             flex: 1;
             overflow-y: auto;
@@ -146,661 +89,118 @@
         }
 
         #places-list li {
-            padding: 15px;
-            border-bottom: 1px solid #333;
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
             cursor: pointer;
             transition: 0.2s;
         }
 
         #places-list li:hover {
-            background: #2f2f2f;
+            background-color: #3d3d3d;
+            border-left: 4px solid var(--accent-color);
         }
 
-        .place-name {
-            color: var(--gold-color);
+        #places-list .place-name {
             font-weight: bold;
-            margin-bottom: 6px;
+            color: var(--accent-color);
+            margin-bottom: 5px;
         }
 
-        .place-address {
-            color: #cccccc;
+        #places-list .place-address {
             font-size: 0.85rem;
+            color: #ccc;
         }
 
-        /* =========================
-           지도 영역
-        ========================== */
-
-        #map-section {
-            flex: 1;
-            position: relative;
-        }
-
-        #tactical-map {
-            width: 100%;
-            height: 100%;
-        }
-
-        /* =========================
-           로드뷰 영역
-        ========================== */
-
-        #roadview-container {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            width: 400px;
-            height: 250px;
-            border: 3px solid var(--gold-color);
-            border-radius: 10px;
-            overflow: hidden;
-            z-index: 5;
-            background: black;
-            box-shadow: 0 0 20px rgba(0,0,0,0.6);
-        }
-
-        /* =========================
-           커스텀 말풍선
-        ========================== */
-
-        .custom-popup {
+        /* 커스텀 말풍선 (오버레이) 스타일 */
+        .gangster-popup {
+            background-color: #1a1a1a;
+            border: 2px solid var(--accent-color);
+            border-radius: 8px;
+            padding: 15px;
             width: 250px;
-            background: #1c1c1c;
-            border: 2px solid var(--gold-color);
-            border-radius: 10px;
-            padding: 12px;
-            color: white;
-            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.8);
+            position: relative;
+            bottom: 50px; /* 마커 위로 띄우기 */
+            left: -125px; /* 가운데 정렬 */
+        }
+
+        .gangster-popup::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            margin-left: -10px;
+            border-width: 10px 10px 0;
+            border-style: solid;
+            border-color: var(--accent-color) transparent transparent transparent;
+        }
+
+        .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
         }
 
         .popup-title {
-            color: var(--gold-color);
-            font-size: 16px;
+            color: var(--accent-color);
             font-weight: bold;
-            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+
+        .close-btn {
+            color: var(--danger-color);
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.2rem;
         }
 
         .popup-address {
-            font-size: 13px;
-            color: #dddddd;
-            margin-bottom: 10px;
+            color: #fff;
+            font-size: 0.85rem;
+            margin-bottom: 15px;
         }
 
-        .popup-button {
-            display: inline-block;
-            padding: 7px 12px;
-            background: var(--red-color);
-            border-radius: 6px;
-            font-size: 12px;
+        .roadview-btn {
+            display: block;
+            text-align: center;
+            background-color: #333;
+            color: var(--accent-color);
+            text-decoration: none;
+            padding: 8px;
+            border-radius: 4px;
             font-weight: bold;
+            border: 1px solid var(--accent-color);
+            transition: 0.2s;
         }
 
+        .roadview-btn:hover {
+            background-color: var(--accent-color);
+            color: #000;
+        }
+
+        /* 오른쪽 전술 지도 */
+        #tactical-map {
+            flex: 1;
+            height: 100%;
+        }
     </style>
 </head>
-
 <body>
 
-    <!-- =========================
-         왼쪽 패널
-    ========================== -->
-
     <div id="operation-desk">
-
-        <div class="header-box">
-
-            <div class="header-title">
-                💰 BANK RAID CONTROL
+        <div class="tab-box">
+            <h2>💰 TARGET SCANNER</h2>
+            <div class="tab-buttons">
+                <button class="tab-btn active" id="tab-bank" onclick="switchTab('bank')">🏦 은행 타겟</button>
+                <button class="tab-btn" id="tab-jewel" onclick="switchTab('jewel')">💎 금은방 타겟</button>
             </div>
-
-            <!-- 탭 -->
-            <div class="tab-group">
-
-                <button
-                    class="tab-button active"
-                    id="bank-tab">
-                    🏦 은행
-                </button>
-
-                <button
-                    class="tab-button"
-                    id="gold-tab">
-                    💎 금은방
-                </button>
-
-            </div>
-
-            <!-- 검색창 -->
-            <div class="search-group">
-
-                <input
-                    type="text"
-                    id="search-keyword"
-                    value="은행"
-                    placeholder="목표 검색..."
-                >
-
-                <button id="search-button">
-                    스캔
-                </button>
-
-            </div>
-
         </div>
-
-        <!-- 결과 리스트 -->
         <ul id="places-list"></ul>
-
     </div>
 
-    <!-- =========================
-         지도 영역
-    ========================== -->
+    <div id="tactical-map"></div>
 
-    <div id="map-section">
-
-        <div id="tactical-map"></div>
-
-        <!-- 로드뷰 -->
-        <div id="roadview-container"></div>
-
-    </div>
-
-    <script>
-
-        /* =========================
-           전역 변수
-        ========================== */
-
-        let mapObject;
-        let placesService;
-        let currentInfoWindow;
-
-        let roadview;
-        let roadviewClient;
-
-        let currentCategory = "BK9";
-
-        let markersArray = [];
-        let overlayArray = [];
-
-        let currentPositionMarker;
-
-        /* =========================
-           카카오맵 로딩 완료 후 실행
-        ========================== */
-
-        kakao.maps.load(function () {
-            initializeMap();
-        });
-
-        /* =========================
-           지도 초기화
-        ========================== */
-
-        function initializeMap() {
-
-            const mapContainer =
-                document.getElementById("tactical-map");
-
-            const defaultPosition =
-                new kakao.maps.LatLng(37.5665, 126.9780);
-
-            mapObject = new kakao.maps.Map(mapContainer, {
-                center: defaultPosition,
-                level: 5
-            });
-
-            placesService =
-                new kakao.maps.services.Places(mapObject);
-
-            currentInfoWindow =
-                new kakao.maps.InfoWindow({ zIndex: 10 });
-
-            /* =========================
-               로드뷰 생성
-            ========================== */
-
-            roadview =
-                new kakao.maps.Roadview(
-                    document.getElementById("roadview-container")
-                );
-
-            roadviewClient =
-                new kakao.maps.RoadviewClient();
-
-            /* =========================
-               현재 위치 가져오기
-            ========================== */
-
-            if (navigator.geolocation) {
-
-                navigator.geolocation.getCurrentPosition(
-
-                    function (position) {
-
-                        const latitude =
-                            position.coords.latitude;
-
-                        const longitude =
-                            position.coords.longitude;
-
-                        const currentPosition =
-                            new kakao.maps.LatLng(
-                                latitude,
-                                longitude
-                            );
-
-                        mapObject.setCenter(currentPosition);
-
-                        displayCurrentLocation(currentPosition);
-
-                        searchByCategory();
-
-                    },
-
-                    function () {
-
-                        alert("위치 권한 거부됨. 서울 중심으로 시작.");
-
-                        searchByCategory();
-
-                    }
-
-                );
-
-            } else {
-
-                alert("GPS 지원 안 됨.");
-
-                searchByCategory();
-
-            }
-
-            /* =========================
-               버튼 이벤트
-            ========================== */
-
-            document
-                .getElementById("search-button")
-                .addEventListener("click", searchKeyword);
-
-            document
-                .getElementById("bank-tab")
-                .addEventListener("click", function () {
-
-                    currentCategory = "BK9";
-
-                    setActiveTab(this);
-
-                    document
-                        .getElementById("search-keyword")
-                        .value = "은행";
-
-                    searchByCategory();
-
-                });
-
-            document
-                .getElementById("gold-tab")
-                .addEventListener("click", function () {
-
-                    currentCategory = "PM9";
-
-                    setActiveTab(this);
-
-                    document
-                        .getElementById("search-keyword")
-                        .value = "금은방";
-
-                    searchByCategory();
-
-                });
-
-        }
-
-        /* =========================
-           현재 위치 마커
-        ========================== */
-
-        function displayCurrentLocation(position) {
-
-            const markerImage =
-                new kakao.maps.MarkerImage(
-                    "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
-                    new kakao.maps.Size(24, 35)
-                );
-
-            currentPositionMarker =
-                new kakao.maps.Marker({
-                    map: mapObject,
-                    position: position,
-                    image: markerImage
-                });
-
-        }
-
-        /* =========================
-           탭 활성화 스타일
-        ========================== */
-
-        function setActiveTab(activeButton) {
-
-            const buttons =
-                document.querySelectorAll(".tab-button");
-
-            buttons.forEach(function (button) {
-                button.classList.remove("active");
-            });
-
-            activeButton.classList.add("active");
-
-        }
-
-        /* =========================
-           카테고리 검색
-        ========================== */
-
-        function searchByCategory() {
-
-            clearAllMarkers();
-
-            placesService.categorySearch(
-                currentCategory,
-                categorySearchCallback,
-                {
-                    location: mapObject.getCenter(),
-                    radius: 5000
-                }
-            );
-
-        }
-
-        /* =========================
-           키워드 검색
-        ========================== */
-
-        function searchKeyword() {
-
-            const keyword =
-                document.getElementById("search-keyword").value;
-
-            if (!keyword.trim()) {
-
-                alert("검색어를 입력해라.");
-                return;
-
-            }
-
-            clearAllMarkers();
-
-            placesService.keywordSearch(
-                keyword,
-                categorySearchCallback,
-                {
-                    location: mapObject.getCenter(),
-                    radius: 5000
-                }
-            );
-
-        }
-
-        /* =========================
-           검색 결과 처리
-        ========================== */
-
-        function categorySearchCallback(data, status) {
-
-            if (status !== kakao.maps.services.Status.OK) {
-
-                alert("목표를 찾지 못했다.");
-                return;
-
-            }
-
-            displayPlaces(data);
-
-        }
-
-        /* =========================
-           장소 출력
-        ========================== */
-
-        function displayPlaces(places) {
-
-            const listElement =
-                document.getElementById("places-list");
-
-            listElement.innerHTML = "";
-
-            const bounds =
-                new kakao.maps.LatLngBounds();
-
-            places.forEach(function (place, index) {
-
-                const position =
-                    new kakao.maps.LatLng(
-                        place.y,
-                        place.x
-                    );
-
-                bounds.extend(position);
-
-                const marker =
-                    createCustomMarker(position);
-
-                createListItem(place, index, marker);
-
-                setupMarkerEvent(marker, place);
-
-            });
-
-            mapObject.setBounds(bounds);
-
-        }
-
-        /* =========================
-           커스텀 마커 생성
-        ========================== */
-
-        function createCustomMarker(position) {
-
-            let imageUrl;
-
-            if (currentCategory === "BK9") {
-
-                imageUrl =
-                    "https://cdn-icons-png.flaticon.com/512/2830/2830284.png";
-
-            } else {
-
-                imageUrl =
-                    "https://cdn-icons-png.flaticon.com/512/2933/2933116.png";
-
-            }
-
-            const markerImage =
-                new kakao.maps.MarkerImage(
-                    imageUrl,
-                    new kakao.maps.Size(40, 40)
-                );
-
-            const marker =
-                new kakao.maps.Marker({
-                    map: mapObject,
-                    position: position,
-                    image: markerImage
-                });
-
-            markersArray.push(marker);
-
-            return marker;
-
-        }
-
-        /* =========================
-           리스트 아이템 생성
-        ========================== */
-
-        function createListItem(place, index, marker) {
-
-            const listElement =
-                document.getElementById("places-list");
-
-            const item =
-                document.createElement("li");
-
-            item.innerHTML = `
-                <div class="place-name">
-                    ${index + 1}. ${place.place_name}
-                </div>
-
-                <div class="place-address">
-                    ${place.road_address_name || place.address_name}
-                </div>
-            `;
-
-            item.onclick = function () {
-
-                const position =
-                    new kakao.maps.LatLng(
-                        place.y,
-                        place.x
-                    );
-
-                mapObject.setCenter(position);
-
-                mapObject.setLevel(3);
-
-                displayCustomOverlay(marker, place);
-
-                showRoadview(position);
-
-            };
-
-            listElement.appendChild(item);
-
-        }
-
-        /* =========================
-           마커 이벤트
-        ========================== */
-
-        function setupMarkerEvent(marker, place) {
-
-            kakao.maps.event.addListener(
-                marker,
-                "click",
-                function () {
-
-                    displayCustomOverlay(marker, place);
-
-                    const position =
-                        new kakao.maps.LatLng(
-                            place.y,
-                            place.x
-                        );
-
-                    showRoadview(position);
-
-                }
-            );
-
-        }
-
-        /* =========================
-           커스텀 팝업
-        ========================== */
-
-        function displayCustomOverlay(marker, place) {
-
-            closeAllOverlays();
-
-            const content = `
-                <div class="custom-popup">
-
-                    <div class="popup-title">
-                        ${place.place_name}
-                    </div>
-
-                    <div class="popup-address">
-                        ${place.road_address_name || place.address_name}
-                    </div>
-
-                    <div class="popup-button">
-                        TARGET LOCKED
-                    </div>
-
-                </div>
-            `;
-
-            const overlay =
-                new kakao.maps.CustomOverlay({
-                    content: content,
-                    map: mapObject,
-                    position: marker.getPosition(),
-                    yAnchor: 1.4
-                });
-
-            overlayArray.push(overlay);
-
-        }
-
-        /* =========================
-           로드뷰 표시
-        ========================== */
-
-        function showRoadview(position) {
-
-            roadviewClient.getNearestPanoId(
-                position,
-                50,
-                function (panoId) {
-
-                    if (panoId) {
-
-                        roadview.setPanoId(
-                            panoId,
-                            position
-                        );
-
-                    }
-
-                }
-            );
-
-        }
-
-        /* =========================
-           마커 제거
-        ========================== */
-
-        function clearAllMarkers() {
-
-            markersArray.forEach(function (marker) {
-                marker.setMap(null);
-            });
-
-            markersArray = [];
-
-            closeAllOverlays();
-
-        }
-
-        /* =========================
-           오버레이 제거
-        ========================== */
-
-        function closeAllOverlays() {
-
-            overlayArray.forEach(function (overlay) {
-                overlay.setMap(null);
-            });
-
-            overlayArray = [];
-
-        }
-
-    </script>
-
-</body>
-</html>
+    <script type="text/javascript" src="//
